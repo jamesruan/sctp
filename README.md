@@ -14,7 +14,7 @@ Status: work in progress
       - [X] 3.2.1 Optional/Variable-Length Parameter Format
       - [X] 3.2.2. Reporting of Unrecognized Parameters
     - [ ] 3.3 Chunk Definition
-      - [ ] 3.3.1. Payload Data (DATA) (0)
+      - [X] 3.3.1. Payload Data (DATA) (0)
       - [ ] 3.3.2. Initiation (INIT) (1)
   - [X] Appendix B: CRC32c Checksum Calculation
 

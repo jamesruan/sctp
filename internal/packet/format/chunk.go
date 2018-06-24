@@ -1,9 +1,11 @@
 package format
 
 import (
-	"bytes"
 	"encoding/binary"
+	"io"
 )
+
+var padding4 = [3]byte{0}
 
 type ChunkFieldHeader struct {
 	Type   ChunkType
@@ -13,24 +15,21 @@ type ChunkFieldHeader struct {
 
 type ChunkField struct {
 	ChunkFieldHeader
-	Params []ChunkParam
-	Value  []byte
+	Value io.WriterTo
 }
 
-func (s ChunkField) MarshalBinary() (data []byte, err error) {
-	paddedLen := 4 - (len(s.Value) & 3)
-	paddingBytes := make([]byte, paddedLen)
-	buf := bytes.NewBuffer(make([]byte, 0, int(s.Length)+paddedLen))
+func (c ChunkField) Len() uint16 {
+	return c.ChunkFieldHeader.Length
+}
 
+func (c ChunkField) Size() uint16 {
+	return pad4_16(c.Len())
+}
+
+func (s ChunkField) WriteTo(buf io.Writer) (int64, error) {
 	binary.Write(buf, binary.BigEndian, s.ChunkFieldHeader)
-	buf.Write(s.Value)
-	buf.Write(paddingBytes)
-	return buf.Bytes(), err
-}
-
-func (s *ChunkFieldHeader) UnmarshalBinary(data []byte) (err error) {
-	r := bytes.NewReader(data)
-	return binary.Read(r, binary.BigEndian, s)
+	n, err := s.Value.WriteTo(buf)
+	return n + 4, err
 }
 
 type ChunkType = uint8
@@ -82,23 +81,13 @@ type ChunkParamHeader struct {
 
 type ChunkParam struct {
 	ChunkParamHeader
-	Value []byte
+	Value io.WriterTo
 }
 
-func (s ChunkParam) MarshalBinary() (data []byte, err error) {
-	paddedLen := 4 - (len(s.Value) & 3)
-	paddingBytes := make([]byte, paddedLen)
-	buf := bytes.NewBuffer(make([]byte, 0, int(s.Length)+paddedLen))
-
+func (s ChunkParam) WriteTo(buf io.Writer) (int64, error) {
 	binary.Write(buf, binary.BigEndian, s.ChunkParamHeader)
-	buf.Write(s.Value)
-	buf.Write(paddingBytes)
-	return buf.Bytes(), err
-}
-
-func (s *ChunkParamHeader) UnmarshalBinary(data []byte) (err error) {
-	r := bytes.NewReader(data)
-	return binary.Read(r, binary.BigEndian, s)
+	n, err := s.Value.WriteTo(buf)
+	return n + 4, err
 }
 
 type ChunkParamType = uint16
@@ -123,4 +112,8 @@ func (c ChunkParamHeader) GetUnknownChunkParamAction() UnknownChunkParamAction {
 	default:
 		return UCPA_SkipParamAndReport
 	}
+}
+
+func pad4_16(v uint16) uint16 {
+	return v + (4 - (v & 3))
 }
