@@ -105,6 +105,47 @@ type ChunkINITValue struct {
 	Params []ChunkParam
 }
 
+func (c ChunkINITValue) WriteTo(buf io.Writer) (int64, error) {
+	var err error
+	var n int64
+
+	err = binary.Write(buf, binary.BigEndian, c.ITag)
+	if err != nil {
+		return n, err
+	}
+	n += 4
+	err = binary.Write(buf, binary.BigEndian, c.ARWND)
+	if err != nil {
+		return n, err
+	}
+	n += 4
+	err = binary.Write(buf, binary.BigEndian, c.OS)
+	if err != nil {
+		return n, err
+	}
+	n += 2
+	err = binary.Write(buf, binary.BigEndian, c.MIS)
+	if err != nil {
+		return n, err
+	}
+	n += 2
+	err = binary.Write(buf, binary.BigEndian, c.ITSN)
+	if err != nil {
+		return n, err
+	}
+	n += 4
+	for _, v := range c.Params {
+		var m int64
+		m, err = v.WriteTo(buf)
+		n += m
+	}
+	return n, err
+}
+
+func (s ChunkINIT) ToChunkField() ChunkField {
+	return ChunkField{s.ChunkFieldHeader, s.ChunkINITValue}
+}
+
 // CPT_IPv4Addr
 type ChunkParamIPv4AddrValue struct {
 	Addr [4]byte
@@ -151,7 +192,6 @@ func (c ChunkParamHostNameAddr) WriteTo(buf io.Writer) (int64, error) {
 	}
 	m, err := buf.Write(c.Padding)
 	return int64(n + m), err
-
 }
 
 // CPT_SupportedAddrTypes
@@ -169,7 +209,7 @@ func (c ChunkParamSupportedAddrTypes) WriteTo(buf io.Writer) (int64, error) {
 
 // Chunk INITACK
 
-type ChunkINIT_ACK struct {
+type ChunkINITACK struct {
 	ChunkFieldHeader
 	ChunkINITACKValue
 }
@@ -181,6 +221,47 @@ type ChunkINITACKValue struct {
 	MIS    uint16 // number of Inbound Streams
 	ITSN   uint32
 	Params []ChunkParam
+}
+
+func (s ChunkINITACK) ToChunkField() ChunkField {
+	return ChunkField{s.ChunkFieldHeader, s.ChunkINITACKValue}
+}
+
+func (c ChunkINITACKValue) WriteTo(buf io.Writer) (int64, error) {
+	var err error
+	var n int64
+
+	err = binary.Write(buf, binary.BigEndian, c.ITag)
+	if err != nil {
+		return n, err
+	}
+	n += 4
+	err = binary.Write(buf, binary.BigEndian, c.ARWND)
+	if err != nil {
+		return n, err
+	}
+	n += 4
+	err = binary.Write(buf, binary.BigEndian, c.OS)
+	if err != nil {
+		return n, err
+	}
+	n += 2
+	err = binary.Write(buf, binary.BigEndian, c.MIS)
+	if err != nil {
+		return n, err
+	}
+	n += 2
+	err = binary.Write(buf, binary.BigEndian, c.ITSN)
+	if err != nil {
+		return n, err
+	}
+	n += 4
+	for _, v := range c.Params {
+		var m int64
+		m, err = v.WriteTo(buf)
+		n += m
+	}
+	return n, err
 }
 
 // CPT_StateCookie
@@ -212,5 +293,37 @@ func (c ChunkParamUnrecognizedParam) WriteTo(buf io.Writer) (int64, error) {
 	}
 	m, err := buf.Write(c.Padding)
 	return int64(n + m), err
+}
 
+// Chunk SACK
+
+type ChunkSACK struct {
+	ChunkFieldHeader
+	ChunkSACKValue
+}
+
+type ChunkSACKValue struct {
+	CTSN           uint32 // cumulative TSN ACK
+	ARWND          uint32 // advertised receiver window credit
+	NoGapAckBlocks uint16 // number of gap ack blocks
+	NoDupTSNs      uint16 // number of gap ack blocks
+	GapAckBlocks   []GapAckBlocksRange
+	DupTSNs        []uint32
+}
+
+type GapAckBlocksRange struct {
+	Start uint16
+	End   uint16
+}
+
+func (s ChunkSACK) ToChunkField() ChunkField {
+	return ChunkField{s.ChunkFieldHeader, s.ChunkSACKValue}
+}
+
+func (c ChunkSACKValue) WriteTo(buf io.Writer) (int64, error) {
+	if err := binary.Write(buf, binary.BigEndian, c); err != nil {
+		return 0, err
+	} else {
+		return int64(4 + 4 + 2 + 2 + 4*len(c.GapAckBlocks) + 4*len(c.DupTSNs)), nil
+	}
 }

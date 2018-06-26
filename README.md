@@ -17,6 +17,7 @@ Status: work in progress
       - [X] 3.3.1. Payload Data (DATA) (0)
       - [X] 3.3.2. Initiation (INIT) (1)
       - [X] 3.3.3. Initiation Acknowledgement (INIT ACK) (2)
+      - [X] 3.3.4. Selective Acknowledgement (SACK) (3)
   - [X] Appendix B: CRC32c Checksum Calculation
 
 - [RFC1982 Serial Number Arithmetic](https://tools.ietf.org/html/rfc1982)
