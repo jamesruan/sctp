@@ -95,6 +95,8 @@ type ChunkParamType = uint16
 const (
 	CPT_IPv4Addr           ChunkParamType = 5
 	CPT_IPv6Addr                          = 6
+	CPT_StateCookie                       = 7
+	CPT_UnrecognizedParam                 = 8
 	CPT_CookiePreservative                = 9
 	CPT_ECNCapable                        = 0x8000
 	CPT_HostNameAddr                      = 11

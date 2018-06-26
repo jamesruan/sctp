@@ -97,11 +97,11 @@ type ChunkINIT struct {
 }
 
 type ChunkINITValue struct {
-	I_Tag  uint32 // Initial Tag
-	A_RWND uint32 // advertised receiver window
+	ITag   uint32 // Initial Tag
+	ARWND  uint32 // advertised receiver window
 	OS     uint16 // number of Outbound Streams
 	MIS    uint16 // number of Inbound Streams
-	I_TSN  uint32
+	ITSN   uint32
 	Params []ChunkParam
 }
 
@@ -141,11 +141,17 @@ func (c ChunkParamCookiePreservative) WriteTo(buf io.Writer) (int64, error) {
 // CPT_HostNameAddr
 type ChunkParamHostNameAddr struct {
 	HostName []byte
+	Padding  []byte
 }
 
 func (c ChunkParamHostNameAddr) WriteTo(buf io.Writer) (int64, error) {
-	n, err := buf.Write(c.HostName[:])
-	return int64(n), err
+	n, err := buf.Write(c.HostName)
+	if err != nil {
+		return int64(n), err
+	}
+	m, err := buf.Write(c.Padding)
+	return int64(n + m), err
+
 }
 
 // CPT_SupportedAddrTypes
@@ -159,4 +165,52 @@ func (c ChunkParamSupportedAddrTypes) WriteTo(buf io.Writer) (int64, error) {
 	} else {
 		return int64(2 * len(c.AddrTypes)), nil
 	}
+}
+
+// Chunk INITACK
+
+type ChunkINIT_ACK struct {
+	ChunkFieldHeader
+	ChunkINITACKValue
+}
+
+type ChunkINITACKValue struct {
+	ITag   uint32 // Initial Tag
+	ARWND  uint32 // advertised receiver window credit
+	OS     uint16 // number of Outbound Streams
+	MIS    uint16 // number of Inbound Streams
+	ITSN   uint32
+	Params []ChunkParam
+}
+
+// CPT_StateCookie
+type ChunkParamStateCookie struct {
+	Value   []byte
+	Padding []byte
+}
+
+func (c ChunkParamStateCookie) WriteTo(buf io.Writer) (int64, error) {
+	n, err := buf.Write(c.Value)
+	if err != nil {
+		return int64(n), err
+	}
+	m, err := buf.Write(c.Padding)
+	return int64(n + m), err
+
+}
+
+// CPT_UnrecognizedParam
+type ChunkParamUnrecognizedParam struct {
+	Value   []byte
+	Padding []byte
+}
+
+func (c ChunkParamUnrecognizedParam) WriteTo(buf io.Writer) (int64, error) {
+	n, err := buf.Write(c.Value)
+	if err != nil {
+		return int64(n), err
+	}
+	m, err := buf.Write(c.Padding)
+	return int64(n + m), err
+
 }
