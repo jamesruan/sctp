@@ -2,8 +2,15 @@ package format
 
 import (
 	"encoding/binary"
+	"errors"
 	"io"
 )
+
+var (
+	ErrInvalidValue = errors.New("invalid value")
+)
+
+// Chunk DATA
 
 type ChunkDATA struct {
 	ChunkFieldHeader
@@ -80,4 +87,76 @@ func (c *ChunkDATA) SetFragmentState(state CDATAFragmentState) {
 	c.Flags >>= 2
 	c.Flags <<= 2
 	c.Flags |= (state & NoFrag)
+}
+
+// Chunk INIT
+
+type ChunkINIT struct {
+	ChunkFieldHeader
+	ChunkINITValue
+}
+
+type ChunkINITValue struct {
+	I_Tag  uint32 // Initial Tag
+	A_RWND uint32 // advertised receiver window
+	OS     uint16 // number of Outbound Streams
+	MIS    uint16 // number of Inbound Streams
+	I_TSN  uint32
+	Params []ChunkParam
+}
+
+// CPT_IPv4Addr
+type ChunkParamIPv4AddrValue struct {
+	Addr [4]byte
+}
+
+func (c ChunkParamIPv4AddrValue) WriteTo(buf io.Writer) (int64, error) {
+	n, err := buf.Write(c.Addr[:])
+	return int64(n), err
+}
+
+// CPT_IPv6Addr
+type ChunkParamIPv6AddrValue struct {
+	Addr [16]byte
+}
+
+func (c ChunkParamIPv6AddrValue) WriteTo(buf io.Writer) (int64, error) {
+	n, err := buf.Write(c.Addr[:])
+	return int64(n), err
+}
+
+// CPT_CookiePreservative
+type ChunkParamCookiePreservative struct {
+	LSI uint32 //suggested Life-Span Increment (msec.)
+}
+
+func (c ChunkParamCookiePreservative) WriteTo(buf io.Writer) (int64, error) {
+	if err := binary.Write(buf, binary.BigEndian, c.LSI); err != nil {
+		return 0, err
+	} else {
+		return 4, nil
+	}
+}
+
+// CPT_HostNameAddr
+type ChunkParamHostNameAddr struct {
+	HostName []byte
+}
+
+func (c ChunkParamHostNameAddr) WriteTo(buf io.Writer) (int64, error) {
+	n, err := buf.Write(c.HostName[:])
+	return int64(n), err
+}
+
+// CPT_SupportedAddrTypes
+type ChunkParamSupportedAddrTypes struct {
+	AddrTypes []ChunkParamAddrType
+}
+
+func (c ChunkParamSupportedAddrTypes) WriteTo(buf io.Writer) (int64, error) {
+	if err := binary.Write(buf, binary.BigEndian, c.AddrTypes); err != nil {
+		return 0, err
+	} else {
+		return int64(2 * len(c.AddrTypes)), nil
+	}
 }

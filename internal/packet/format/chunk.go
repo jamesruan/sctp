@@ -92,6 +92,23 @@ func (s ChunkParam) WriteTo(buf io.Writer) (int64, error) {
 
 type ChunkParamType = uint16
 
+const (
+	CPT_IPv4Addr           ChunkParamType = 5
+	CPT_IPv6Addr                          = 6
+	CPT_CookiePreservative                = 9
+	CPT_ECNCapable                        = 0x8000
+	CPT_HostNameAddr                      = 11
+	CPT_SupportedAddrTypes                = 12
+)
+
+type ChunkParamAddrType = uint16
+
+const (
+	CPAT_IPv4Addr     ChunkParamAddrType = 5
+	CPAT_IPv6Addr                        = 6
+	CPAT_HostNameAddr                    = 11
+)
+
 type UnknownChunkParamAction uint8
 
 const (
